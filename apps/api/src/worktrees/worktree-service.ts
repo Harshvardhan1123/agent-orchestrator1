@@ -88,12 +88,16 @@ export class WorktreeService {
   readonly #authorEmail: string;
 
   constructor(options: WorktreeServiceOptions) {
-    this.#repoRoot = path.resolve(options.repoRoot);
-    this.#worktreesRoot = path.resolve(options.worktreesRoot);
-    this.#git = options.gitBinary ?? "git";
-    this.#authorName = options.authorName ?? "TaskFleet Agent";
-    this.#authorEmail = options.authorEmail ?? "agent@taskfleet.local";
-  }
+  this.#repoRoot = path.resolve(options.repoRoot);
+  this.#worktreesRoot = path.resolve(options.worktreesRoot);
+
+  // Allow Render/production to provide an explicit Git binary.
+  // Locally, fall back to the normal `git` command.
+  this.#git = options.gitBinary ?? process.env.GIT_BINARY ?? "git";
+
+  this.#authorName = options.authorName ?? "TaskFleet Agent";
+  this.#authorEmail = options.authorEmail ?? "agent@taskfleet.local";
+}
 
   get worktreesRoot(): string {
     return this.#worktreesRoot;
