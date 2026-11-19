@@ -444,34 +444,41 @@ export class WorktreeService {
   }
 
   async #gitRun(
-    args: string[],
-    cwd: string,
-    options: {
-      maxBuffer?: number;
-      env?: NodeJS.ProcessEnv;
-      redact?: string[];
-    } = {}
-  ): Promise<{ stdout: string; stderr: string }> {
-    try {
-      return await run(this.#git, args, {
-        cwd,
-        maxBuffer: options.maxBuffer ?? 10 * 1024 * 1024,
-        env: {
-          ...process.env,
-          ...options.env,
-          // Never allow a hook or credential prompt to block a run.
-          GIT_TERMINAL_PROMPT: "0",
-        },
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      const sanitized = options.redact?.length
-        ? redactSecrets(message, options.redact)
-        : message;
+  args: string[],
+  cwd: string,
+  options: {
+    maxBuffer?: number;
+    env?: NodeJS.ProcessEnv;
+    redact?: string[];
+  } = {}
+): Promise<{ stdout: string; stderr: string }> {
+  try {
+    return await run(this.#git, args, {
+      cwd,
+      maxBuffer: options.maxBuffer ?? 10 * 1024 * 1024,
+      env: {
+        ...process.env,
+        ...options.env,
+        // Never allow a hook or credential prompt to block a run.
+        GIT_TERMINAL_PROMPT: "0",
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
 
-      throw new Error(sanitized);
-    }
+    const sanitized = options.redact?.length
+      ? redactSecrets(message, options.redact)
+      : message;
+
+    throw new Error(
+      `Git command failed.\n` +
+        `Binary: ${this.#git}\n` +
+        `CWD: ${cwd}\n` +
+        `Command: ${this.#git} ${args.join(" ")}\n` +
+        `Error: ${sanitized}`
+    );
   }
+}
 }
 
 export function parseNameStatus(output: string): ChangedFile[] {
